@@ -1,0 +1,52 @@
+---
+title: "json notes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Json notes.
+From here:  https://www.youtube.com/playlist?list=PLroEs25KGvwzmvIxYHRhoGTz9w8LeXek0
+
+Introduction to databases by Jennifer Widom.  JSON is good for semi-structured data.
+Not as rigid as relational data mode. 
+
+Base values are: number, string, boolean.  
+
+Composite structures are objects and arrays. 
+
+Objects are label value pairs.  The labels are sets. 
+These composite objects can be recursive. Object can contain
+other objects.  Arrays can contain other arrays (or objects).
+
+Heterogeneity.  A specific book (in a book collection can have a "remark") for example. 
+
+The schema is mixed up with the dataset. This means that it is self-describing. 
+The relational schema is fixed in advance. 
+
+Queries for relational data can be written in simple expresssive languages. But
+for JSON there is no standardised approach. 
+
+There is something called JSON schema which is like XML Schema. Has been a proposal
+called JSON Path and JSON Schema and something called JAQL. 
+
+Browsers can be good for navgiating JSON data. 
+
+In JSON strings need double quotes. Anything else is a number or a boolean. 
+true, false and null are reserved words in JSON. 
+
+Arrays in JSON can have mixed types.  
+A two element array could have a string, then an object.
+
+
+Have a look at:
+You can also use listviewer::jsonedit() to explore it interactively:
+
+
+
+
+
+
+
