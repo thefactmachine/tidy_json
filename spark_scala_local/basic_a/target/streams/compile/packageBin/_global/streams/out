@@ -1,0 +1,7 @@
+[0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/markthekoala/spark_scala_local/basic_a/target/scala-2.12/basic_a_2.12-1.0.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	basic_a.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/spark_scala_local/basic_a/target/scala-2.12/classes/basic_a.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	basic_a$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/spark_scala_local/basic_a/target/scala-2.12/classes/basic_a$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0mDone packaging.[0m

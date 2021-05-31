@@ -1,0 +1,378 @@
+---
+title: "Untitled"
+author: "Mark"
+date: "30/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic Scalac Example
+
+Create the following and save it as `hello.scala`
+
+Then run `scalac hello.scala`
+
+This produces two class files: (I dont know why there are two). These files
+are ready to work with the JVM.
+
+Note how these files get their name. It is from the name of the object in the 
+code.
+
+```
+hello$.class
+hello.class
+
+```
+```
+object hello {
+    def main(args: Array[String]) = {
+        println("Hello, world")
+    }
+}
+```
+
+Now to run the program. Type `scala hello`
+
+To get information from the class file run this command:
+
+`javapp hello.class`
+
+## To create a hello world jar file and then run it
+
+Save the following as `hello_world.scala`:
+
+```
+object Main extends App {
+    println("Hello World from Mark Scala!")
+}
+
+```
+
+Then type the following to compile and create the jar file
+
+```
+scalac hello_world.scala -d xxx.jar
+```
+
+Now run it
+
+```
+scala xxx.jar
+
+```
+
+## Packages
+`import users._` imports everything from the users package.
+`import users.User` imports the class User.
+
+## Create a basic class, compile to jar file, include the jar file and use it
+Create the following and save it to `mark_test.scala`
+
+```{scala}
+package mark_test
+class Person(val firstName: String, val lastName: String) {
+  
+  println("the constructor begins")
+  
+  val fullName = firstName + " " + lastName
+  
+  def printFullName {
+    // access the fullName field, which is created above
+    println(fullName) 
+  }
+
+   printFullName
+
+}
+```
+
+Now compile the code above into a jar file.
+```
+scalac mark_test.scala -d mark_test_jar.jar
+```
+
+Now launch an interactive Scala REPL using the jar file in the class path
+```
+scala -cp mark_test_jar.jar
+```
+At the Scala prompt import the class person using the following command
+
+```
+import mark_test.Person
+
+```
+
+Instanciate the class
+
+```
+val test_mark = new Person("Mark", "Hatcher")
+```
+
+# ======================================================================
+## Hello World SBT
+We are inching our way forward to include a jar file with a package defintion
+into a simple Scala application.  The following shows how to run a simple
+program using the Scala Build Tool.  We follow this:
+
+https://hello-scala.com/802-scala-build-tool-sbt.html
+
+We create the directory structure with the root directory called: `hello_world_sbt`
+
+Next we create the following program:
+
+
+
+```
+object hello_world_sbt extends App {
+    println("Hello, world - he can talk Cornelius. Look he can talk")
+}
+```
+
+Both the above and below are added to the project root. The following is `build.sbd`
+This is in the root directory also
+
+```
+name := "hello_world_sbt"
+
+version := "1.0"
+
+scalaVersion := "2.12.4"
+```
+
+From the root directory we type. `sbt` and then we type `run`  This can take 
+a minute or so.  But we can make changes to the code and then type `run` again.
+
+The folder structure for this project is created by using the following bash script:
+
+```
+mkdir hello_world_sbt
+cd hello_world_sbt
+mkdir -p src/{main,test}/{java,resources,scala}
+mkdir lib project target
+```
+
+
+run the previous jar file experiement with SBT.  It seems that SBT 
+compiles to a slightly different byte code compared to scalac. Failed when
+running `import mark_test.Person` in SBT.
+
+So we start our `create_jar` sbt project. To create a jar file just run the
+following sbt commands:
+
+```
+sbt compile
+sbt run
+sbt package
+
+sbt update
+sbt reload
+
+
+```
+
+And then the jar file should be found in following directory:
+
+`target/scala-2.12/jarfile`
+
+## Putting it all together
+Create a new sbt project with standard folder structure (as above).  Then added
+the jar file created above into the `lib` directory. Create some code as below
+and ran the program. It worked !!!
+
+
+```
+import create_jar.Person
+
+object hello_jar extends App {
+    println("Hello, inside hello jar with import")
+    val test_mark = new Person("Mark", "Hatcher")
+
+}
+```
+
+To show where the jar file should go, type the following in the sbt console:
+
+`show unmanagedBase`
+
+
+
+
+## Investigating JAR files
+
+`javapp hello.class`
+# lists contents
+jar tvf jarfile
+
+jar xf hello_jar_sbt_2.12-1.0.jar 
+
+
+
+
+
+https://hello-scala.com/802-scala-build-tool-sbt.html
+
+
+
+# other things
+https://docs.scala-lang.org/getting-started/sbt-track/getting-started-with-scala-and-sbt-on-the-command-line.html
+
+
+## investigate
+How to use:
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+
+
+## The big problem - talk from Scala / Spark / ES
+Downloaded `elasticsearch-spark-20_2.12-7.12.0.jar` from https://mvnrepository.com/
+
+First test whether we can run Scala / Spark as a self contained program.
+
+## Smaller problem - Scala / Spark.  Run a compiled self contained Scala program
+Based on here:  `https://spark.apache.org/docs/latest/quick-start.html`
+
+Created a `scala_spark_submit` folder with the following code:
+
+```{scala, eval = FALSE}
+/* SimpleApp.scala */
+import org.apache.spark.sql.SparkSession
+
+object SimpleApp {
+  def main(args: Array[String]) {
+    val logFile = "/Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/scala_spark_submit/README.md" // Should be some file on your system
+    val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
+    val logData = spark.read.textFile(logFile).cache()
+    val numAs = logData.filter(line => line.contains("a")).count()
+    val numBs = logData.filter(line => line.contains("b")).count()
+    println(s"Lines with a: $numAs, Lines with b: $numBs")
+    spark.stop()
+  }
+}
+```
+
+Set the following line in the `build.sbt` file.
+
+`libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.1.2"`
+
+Compiled this code and extracted the jar file and put it on the root of directory
+and ran it with the following.
+
+`spark-submit --class "SimpleApp" --master "local[4]" simple-project_2.12-1.0.jar`
+
+
+# =============================================================================
+
+`wget media.sundog-soft.com/es/fakefriends.csv`
+
+
+`jar tvf elasticsearch-spark-20_2.12-7.12.0.jar | grep "sql"`
+# =============================================================================
+# =============================================================================
+## Sucess - finally. Running from spark-shell
+The problem was incompatible versions of either spark / scala / es library.
+
+Firstly, needed to uninstall previous Spark and Scala installations.
+```
+brew uninstall apache-spark
+brew uninstall scala
+```
+Now install the correct libaries:
+
+```
+brew install scala@2.11
+brew tap eddies/spark-tap 
+brew install apache-spark@2.3.2
+```
+
+The above means that we are running Scala version 2.11.8 on Spark 
+(notice logon screen when using spark-shell) And also that the version of Scala 
+installed was 2.11.12.  Both are 2.11.  The version of our library supports 
+Scala 2.11.  See the following:
+
+`https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-spark-20_2.111`
+
+The jar file was downloaded from here:
+
+`https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-spark-20_2.11/7.0.1`
+
+Next, spark-shell was initiated with the following:
+
+`spark-shell --packages org.elasticsearch:elasticsearch-spark-20_2.11:7.0.1 `
+
+And then the following code was typed interactively:
+
+```{scala, eval = FALSE}
+import org.elasticsearch.spark.sql._
+case class Person(ID:Int, name:String, age:Int, numFriends:Int)
+
+def mapper(line:String): Person = {
+  val fields = line.split(',')
+  val person:Person = Person(fields(0).toInt, fields(1), fields(2).toInt, fields(3).toInt)
+  return person
+}
+
+import spark.implicits._
+
+val lines = spark.sparkContext.textFile("fakefriends.csv")
+val people = lines.map(mapper).toDF()
+
+people.saveToEs("spark-friends")
+```
+### To check the transfer.
+
+Ran the following CURL command:
+
+```
+curl -XGET '127.0.0.1:9200/spark-friends/_search?pretty' 
+```
+
+Or from Kibana as:
+
+```
+GET spark-friends/_search?pretty
+```
+
+In Kibana the following shows how to list indexes and then how to delete:
+
+```
+GET /_cat/indices
+DELETE /spark-friends
+
+```
+
+The relevant line for the sbt is as follows:
+`libraryDependencies += "org.elasticsearch" %% "elasticsearch-spark-20" % "7.0.1"`
+
+## You dont need to type the code into the spark shell
+We can just have the Scala we wrote above into a file called `load_test.scala`
+
+And then run it from the terminal using the following line:
+
+```
+spark-shell -i load_test.scala --packages org.elasticsearch:elasticsearch-spark-20_2.11:7.0.1
+```
+spark-submit --class "basic_a" --master "local[4]" target/scala-2.12/basic_a_2.12-1.0.jar
+
+# =============================================================================
+# =============================================================================
+# =============================================================================
+
+
+
+# this looks good for setting config..etc.
+https://community.cloudera.com/t5/Support-Questions/Spark-writing-to-ElasticSearch/td-p/169984
+
+This is a person using the spark-shell
+https://community.cloudera.com/t5/Support-Questions/Spark-writing-to-ElasticSearch/td-p/169984
+
+This has a self contained scala / spark example.
+https://spark.apache.org/docs/latest/quick-start.html
+
+What Scala libraries are available on my system....
+
+https://www.elastic.co/guide/en/elasticsearch/hadoop/master/spark.html
+
+# nice example of context
+https://stackoverflow.com/questions/49604135/spark-conf-scala

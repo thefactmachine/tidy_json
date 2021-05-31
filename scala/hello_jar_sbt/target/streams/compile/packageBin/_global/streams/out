@@ -1,0 +1,21 @@
+[0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/hello_jar_sbt_2.12-1.0.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$delayedInit$body 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$delayedInit$body 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$delayedInit$body 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$delayedInit$body 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$ 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$ 3.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_jar$ 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/target/scala-2.12/classes/hello_jar$ 2.class[0m
+[0m[[0m[0mdebug[0m] [0m[0mDone packaging.[0m

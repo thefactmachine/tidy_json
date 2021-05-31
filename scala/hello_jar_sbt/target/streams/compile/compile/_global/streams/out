@@ -1,0 +1,5 @@
+[0m[[0m[31merror[0m] [0m[0merror while loading Person, class file '/Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_jar_sbt/lib/mark_test_jar.jar(mark_test/Person.class)' is broken[0m
+[0m[[0m[31merror[0m] [0m[0m(class java.lang.RuntimeException/error reading Scala signature of Person.class: Scala signature Person has wrong version[0m
+[0m[[0m[31merror[0m] [0m[0m expected: 5.0[0m
+[0m[[0m[31merror[0m] [0m[0m found: 5.2 in Person.class)[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m

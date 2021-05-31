@@ -1,0 +1,9 @@
+[0m[[0m[0mdebug[0m] [0m[0mPackaging /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_world_sbt/target/scala-2.12/hello_world_sbt_2.12-1.0.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_world_sbt$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_world_sbt/target/scala-2.12/classes/hello_world_sbt$.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_world_sbt$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_world_sbt/target/scala-2.12/classes/hello_world_sbt$delayedInit$body.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	hello_world_sbt.class[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/markthekoala/Library/Mobile Documents/com~apple~CloudDocs/scala/hello_world_sbt/target/scala-2.12/classes/hello_world_sbt.class[0m
+[0m[[0m[0mdebug[0m] [0m[0mDone packaging.[0m
