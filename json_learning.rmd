@@ -44,9 +44,10 @@ A two element array could have a string, then an object.
 Have a look at:
 You can also use listviewer::jsonedit() to explore it interactively:
 
+To learn JMESPath, go to the interactive tutorial.
 
+Rectangling guide:   https://tidyr.tidyverse.org/articles/rectangle.html
 
-
-
-
+in R if you can see names for a list then it was an object.  If you cannot
+see a named list, then it was an array.
 
