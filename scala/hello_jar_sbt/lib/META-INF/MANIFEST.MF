@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: hello_jar_sbt
-Specification-Version: 1.0
-Specification-Vendor: hello_jar_sbt
-Implementation-Title: hello_jar_sbt
-Implementation-Version: 1.0
-Implementation-Vendor: hello_jar_sbt
-Implementation-Vendor-Id: hello_jar_sbt
-
