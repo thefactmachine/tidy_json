@@ -69,4 +69,18 @@ sc = SparkContext(conf=conf)
 import org.apache.spark.SparkContext
 val sc = SparkContext.getOrCreate()
 
+## Starting Spark shell with ES parameters
+```{scala}
+SPARK_HOME/bin/spark-shell --master local[4] \
+ --jars ~/spark/jars/elasticsearch-spark-20_2.11-5.1.2.jar \
+ --conf spark.es.nodes="localhost" \
+ --conf spark.es.resource="myindex/mytype" \
+ --conf spark.es.query="file:///home/pat/spark/myquery.json"
+ ```
+ 
+ 
+
+
+
+
 
