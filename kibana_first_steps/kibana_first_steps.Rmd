@@ -1,0 +1,190 @@
+---
+title: "kibana_first_steps"
+author: "markspace"
+date: "15/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Kibana first steps
+Firstly, downloaded data from the following:
+`https://github.com/elastic/elk-index-size-tests/blob/master/logs.gz` Then
+created a config file called `log_load.conf`
+
+This has a size of 300k records. Then ran the following command to get the size
+of the index:
+
+`GET /logstash-*/_count`
+
+In regards to Kibana, The Dev Tools page consists of a set of plugins, each of which assists in performing different functionalities. 
+
+By default, this page contains only a single plugin, called Console, which provides a UI to interact with the REST API of Elasticsearch.
+
+
+## Two types of index
+
+### Time series data
+Time-series indexes: If there is a correlation between the timestamp and the data, the data is called time-series data. This data will have a timestamp field. Examples of this would be logs data, metrics data, and tweet data. When this data is stored in Elasticsearch, the data is stored in multiple indexes (rolling indexes) with index names appended by a timestamp, usually; for example, unixlogs-2017.10.10, tweets-2017.05, logstash-2017.08.10
+
+### Regular indexes
+If the data doesn't contain timestamp and the data has no correlation with time, then the data is called regular data.
+
+### Index Pattern
+I typed in `logstash-*` to create an `Index Pattern`. 
+
+### Discover page
+On the `Discover Tab` I entered an absolute date range (28.05.2014) to 
+1.07.2014 and then pressed refresh. 
+
+### Fields list
+When you hover over the various fields, a popup is displayed showing the field's
+incidence in the corpora.
+
+### Three types of querying data
+
+Lucene based query
+https://lucene.apache.org/core/2_9_4/queryparsersyntax.html
+
+Elasticsearch DSL query
+https://www.elastic.co/guide/en/elasticsearch/reference/5.5/query-dsl.html
+
+KBL Query
+Kibana Query Language
+
+KBL is enabled by default.  In the query bar. Press the KBL button and select
+to turn KBL off.  This will enable Lucene.
+
+In the query bar you can just type "files logstash" and press enter and the 
+results are displayed. 
+
+If doing an exact phrase search, then surround the words in quotes. 
+
+The following shows how to do a query against a specific field name:
+
+```
+geoip.city_name: Amsterdam
+```
+
+The following is the same as above but says Amerstam and not response = 200.
+
+```
+geoip.city_name: Amsterdam -response: 200
+```
+
+The following is a free text search with not
+
+```
+geoip.city_name: Amsterdam -200
+```
+
+Cannot find `grouping search` example in the textbook.
+
+The following is a **range** query:
+
+```
+response:[301 TO 500]
+```
+
+### Wildcard searches
+By using the * and ? wildcards with search text, 
+queries can be executed; * denotes zero or more matches and ? 
+denotes zero or one match, as shown in the following screenshot:
+
+For example:
+```
+geoip.city_name: S?n*e
+```
+The above can return "Singapore" or "Sunnyvalue"
+
+Wildcard searches can be computationally expensive. It is always preferable to add a wildcard as a suffix rather than a prefix of the search text.
+
+Like wildcards, regex queries are supported too. 
+By using slashes (/) and square brackets ([]), regex patterns can be specified. 
+But be cautious when using regex queries, as they are very computationally expensive.
+
+
+### Elasticsearch DSL Query
+
+See the following:
+```
+{"bool":{"must":[{"match":{"useragent.name":"IE"}},
+{"match":{"geoip.region_name":"Washington"}}]}}
+```
+
+### KQL
+The query written in Lucene syntax would be: `response:200 geoip.city_name:Diedorf`
+
+But using KQL it is not okay to use spaces for an 'or' operator.  So this
+needs to be put in explicitly. 
+
+`response:200 or geoip.city_name:Diedorf`
+
+The operators and, or, and not are case-insensitive.
+
+### Histogram interval
+This can be adjusted by selecting the relevant drop down.
+
+When hovering above the history, the cursor shows a cross hair (+ symbol) and
+the user can draw a square and the the tool will show the data for this selection.
+
+The user can save, load or create a new query using the buttons on the top.
+
+The **inspect** button can show various details about the query such as how
+long it took to run. You can also look at the **request** sub-button to see
+how the query is translated. 
+
+## Visualise
+The Visualize page helps to create visualizations in the form of graphs, tables, 
+and charts, thus assisting in visualizing all the data that has been stored in Elasticsearch easily.
+
+### Types of aggregations
+As visualization typically depends on aggregations, it is appropriate to discuss
+two basic types of aggregations.
+
+#### Bucket aggregations
+The grouping of documents by a common criteria is called bucketing. Bucketing is very similar to the GROUP BY functionality in SQL.
+
+Kibana supports the following types of aggregations:
+
+**Histogram** buckets numerical variables into fixed sized buckets.
+
+**Date Histogram**  As above except for date fields.  There is usually a natural
+interval such as a day, month etc.
+
+**Range** This is similar to histogram except that arbitrary intervals can
+be specified.  Such as 15-25 years, 25 - 50 years etc.
+
+**Terms**  Based on grouping by each unique term. This works on keyword fields
+only. 
+
+**Filters** This is just total for USA and total for Japan..etc.
+
+**Geohash grid** This aggregation works with fields containing geo_point values.
+
+#### Metric aggregations
+This is just verbs like count, sum, average...etc.
+
+### Creating Visualisations
+Goto to the visualiation section and create new visualistion.
+
+You can select line graph ... area graph etc.  And also choose to place a table
+for displaying tabular data.  There is also a framework for inserting 
+text type pieces into the visualtion using a markdown type format.  See here:
+
+https://help.github.com/categories/writing-on-github/
+
+Kibana can create cholopleth maps and word clouds. 
+
+### Upto ## ===========================
+
+Response codes over time. 
+
+
+
+
+
+
+

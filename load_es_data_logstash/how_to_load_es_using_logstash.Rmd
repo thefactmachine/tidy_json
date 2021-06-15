@@ -1,0 +1,22 @@
+---
+title: "importing_json_data"
+author: "Mark"
+date: "04/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Importing json data into ES
+
+The **git repo** is at:
+https://github.com/pranav-shukla/learningelasticstack
+
+On the branch 7.0.
+
+The instructions for importing data are in chapter-03/products_data/README.md.
+
+vct_weights <- 
+c(6.9, 8.1, 8.3, 8.2, 6.8, 7.1, 7.5, 7.9, 9.0, 7.7, 5.8, 9.6, 9.6, 7.7, 8.1, 7.3)

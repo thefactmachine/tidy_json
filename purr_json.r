@@ -268,16 +268,51 @@ url_json <- "https://site.web.api.espn.com/apis/fitt/v3/sports/football/nfl/qbr?
 # get the raw json into R
 raw_json_list <- jsonlite::read_json(url_json)
 
+library(listviewer)
+
+listviewer::jsonedit(raw_json_list)
+
+
 # get names of the QBR categories
 category_names <- pluck(raw_json_list, "categories", 1, "labels")
 
-
-
-category_names <- pluck(raw_json, "categories", "labels", 1)
-
-
 # create tibble out of athlete objects
 athletes <- tibble(athlete = pluck(raw_json_list, "athletes"))
+
+
+# ==========================================================================
+# explanation code...the following unpacks the long qbr_hadley code below
+
+# this contains a single column called "athlete" Within this column are 
+# two named lists: "athlete" and "categories"
+listviewer::jsonedit(athletes)
+
+# this just displays "athlete" and "categories"
+athletes %>% unnest_wider(athlete) %>% head() %>% View()
+
+# fields "displayName", "teamName", "teamShortName" are simple types.
+# these are extracted as the first three columns The original lists "athletes"
+# and "categories" are still columns
+# 30 x 5
+athletes %>% unnest_wider(athlete) %>%
+  hoist(athlete, "displayName", "teamName", "teamShortName") %>% View()
+
+test_a <- athletes %>% 
+  unnest_wider(athlete) %>% 
+  hoist(athlete, "displayName", "teamName", "teamShortName") 
+
+listviewer::jsonedit(test_a)
+
+
+test_b <- athletes %>% 
+  unnest_wider(athlete) %>% 
+  hoist(athlete, "displayName", "teamName", "teamShortName") %>% 
+  unnest_longer(categories) 
+
+listviewer::jsonedit(test_b)
+# ==========================================================================
+# ==========================================================================
+
 
 qbr_hadley <- athletes %>% 
   unnest_wider(athlete) %>% 

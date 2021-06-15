@@ -1,0 +1,65 @@
+---
+title: "modelling"
+author: "Mark"
+date: "09/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+Relational databases have poor support for full text search.  It is also
+expensive to join tables especially when the tables are on different machines.
+
+Elasticsearch treats the world as it is flat. An index is a flat collection
+of independent documents.  A single document should contain all of the information
+that is required to decide whether it matches a search request.
+
+However, the problem with this is that **relationships matter.**.
+
+There are four common ways to manage relational data in elastic search.  
+These are:
+
+* Application side joins
+* Data denormalisation
+* Nested objects
+* Parent / child relationships
+
+https://stackoverflow.com/questions/29346935/elasticsearch-nested-object-under-path-is-not-of-nested-type/29749186
+
+
+TO do
+Parent Child
+Nested data types.
+Logstash loading..
+Kibana
+
+If there are multiple JSON records, and those are delimited by \n, then use the json_lines codec.
+
+input{
+    stdin{
+    codec => "json"
+    }
+}
+
+However, the introduction of a feature called **ingest node** in 
+Elasticsearch 5.x onward provided a lightweight solution for preprocessing and 
+enriching documents within Elasticsearch itself before they are indexed.
+
+
+This preprocessing is performed via an ingest node that intercepts bulk and 
+index requests, applies the transformations to the data, and then passes 
+the documents back to the index or bulk APIs. With the release of the new 
+ingest feature, Elasticsearch has taken out the filter part of Logstash 
+so that we can do our processing of raw logs and enrichment within 
+Elasticsearch.
+
+To preprocess a document before indexing, we must define the pipeline 
+(which contains sequences of steps known as processors for transforming an 
+incoming document). To use a pipeline, we simply specify the pipeline 
+parameter on an index or bulk request to tell the ingest node which 
+pipeline to use:
+
+

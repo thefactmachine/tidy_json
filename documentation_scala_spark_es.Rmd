@@ -359,6 +359,27 @@ spark-submit --class "basic_a" --master "local[4]" target/scala-2.12/basic_a_2.1
 # =============================================================================
 # =============================================================================
 
+# Get it to work using ATO Jar file.
+Downloaded the following:
+`https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-hadoop/7.6.2`
+
+Following are the sbt lines:
+```
+// https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-hadoop
+libraryDependencies += "org.elasticsearch" % "elasticsearch-hadoop" % "7.6.2"
+```
+
+
+
+
+
+
+# Links from AMIR
+https://mindmajix.com/elasticsearch/curl-syntax-with-examples
+https://stackoverflow.com/questions/40254319/how-to-run-external-jar-functions-in-spark-shell
+https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch-hadoop/7.6.2
+https://www.elastic.co/guide/en/elasticsearch/hadoop/current/spark.html
+
 
 
 # this looks good for setting config..etc.

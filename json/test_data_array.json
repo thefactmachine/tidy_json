@@ -1,0 +1,5 @@
+[{"person": "mark", "gender": "male", "location" : "canberra", "friends": ["degan", "sean"]},
+{"person": "degan", "gender": "male", "location" : "canberra", "friends": ["degan", "sean", "alison"]},
+{"person": "sean", "gender": "male", "location" : "canberra", "friends": ["degan", "sean", "alison", "amir"]},
+{"person": "alison", "gender": "female", "location" : "brisbane", "friends": ["degan", "sean"]}]
+

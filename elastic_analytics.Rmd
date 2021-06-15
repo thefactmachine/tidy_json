@@ -1,0 +1,351 @@
+---
+title: "Analytics"
+author: "markspace"
+date: "08/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Elasticsearch Analytics
+Searching addresses the need for zooming in to a few records, 
+whereas analytics address the need for zooming out 
+and slicing the data in different ways.
+
+### Basic form of aggregation
+
+```{js eval = false}
+POST /<index_name>/_search
+{  
+  "aggs": { 
+    ... type of aggregation ...
+          },
+  "query": {  ... type of query ... }, 
+  "size": 0  
+}
+```
+
+The `aggs` element should contain the actual aggregation query.
+The optional query element defines the context of the aggregation. If this 
+is not specified, then all records are queried.
+The size specifies the number of records returned. 
+Typically, if we are only interested in getting aggregation results, 
+we should set the size element to 0, to avoid getting any results, 
+along with the aggregation result.
+
+There are four types of aggregation that ES supports:
+
+* Bucket aggregations
+* Metric aggregations
+* Matrix aggregations
+* Pipeline aggregations
+
+
+### Bucket aggregations
+These are similar to the following:
+
+```{sql eval = FALSE}
+SELECT column1, count(*) FROM table1 GROUP BY column1;
+```
+Bucket aggregations can be nested inside other bucket aggregations. 
+
+### Metric aggregations
+These involve numbers.  We aggregate using sum, average...etc.  The following
+shows a SQL equivalent.
+
+```{sql eval = FALSE}
+SELECT avg(score) FROM results;
+```
+
+Metric aggregation can be placed on the top or outermost level in the 
+aggregations query. 
+
+Metric aggregations can also be nested inside bucket aggregations. Metric aggregations cannot nest other types of aggregations inside of them.
+
+### Matrix aggregations
+These will not be covered.
+
+### Pipeline aggregations
+Pipeline aggregations are higher order aggregations that can aggregate the output of other aggregations.
+
+
+### loading the data
+Followed the instructions here.
+https://github.com/pranav-shukla/learningelasticstack/tree/v7.0
+
+### Hits total
+With Elasticsearch version 7.0, hits.total is not calculated if 
+the hits are greater than 10,000. 
+
+This is to avoid the unnecessary overhead of calculating the 
+exact matching documents for the given query.
+
+We can force the calculation of exact hits by passing 
+track_total_hits=true as a request parameter. 
+
+
+This sums the field "downloadTotal" and calls it "download_sum"
+
+```{js eval = FALSE}
+GET bigginsight/_search?track_total_hits=true
+{
+ "aggregations": {
+    "download_sum": {
+      "sum": {
+        "field": "downloadTotal"
+      }      
+    }
+  },
+  "size": 0
+}
+```
+
+Specify size = 0 to prevent raw search results from being returned.
+Basically, you can run the same query above as min, max, avg ..etc. The
+`stats` aggregation computes all of the min, max, sum & avg in one go.
+
+The `extended stats` offers a bit more. "count", "variance", "standard dev."
+
+#### Cardinality
+The number of unique users is as follows:
+
+```{js eval = FALSE}
+GET bigginsight/_search
+{
+ "aggregations": {
+    "unique_visitors": {
+      "cardinality": {
+        "field": "username"
+      }
+    }
+  },
+  "size": 0
+}
+```
+### Bucket aggregations
+The most common way to bucket or segment your string typed data is by using terms aggregation. 
+Let's take a look at terms aggregation.
+
+```{js eval = FALSE}
+GET /bigginsight/_search
+{
+  "aggs": {
+    "byCategory": {
+      "terms": {
+        "field": "category"
+      }
+    }
+  },
+  "size": 0
+}
+```
+The aggs or aggregations element at the top level should wrap any aggregation.
+The name of the aggregation that we choose is `byCategory`
+We are doing a terms aggregation, and hence, we have the terms element.
+
+`sum_other_doc_count` is the total count of documents that are not 
+included in the buckets that are returned.
+
+
+#### To determine how many buckers are returned.
+The default is 10.
+
+```{js eval = FALSE}
+GET /bigginsight/_search?size=0
+{
+  "aggs": {
+    "byApplication": {
+      "terms": {
+        "field": "application",
+        "size": 15
+      }
+    }
+  }
+}
+```
+
+At the top level, the size parameter is used to prevent any search hits.
+
+### Bucketing on numerical data
+
+```{js eval = FALSE}
+POST /bigginsight/_search?size=0
+{
+ "aggs": {
+ "by_usage": {
+ "histogram": {
+ "field": "usage",
+ "interval": 1000
+ }
+ }
+ }
+}
+```
+
+#### Range aggregation
+What if we don't want all the buckets to have the same interval? 
+It's possible to create unequal sized buckets by using the range aggregation.
+
+```{js eval = FALSE}
+POST /bigginsight/_search?size=0
+{
+  "aggs": {
+    "by_usage": {
+      "range": {
+        "field": "usage",
+        "ranges": [
+          { "to": 1024 },
+          { "from": 1024, "to": 102400 },
+          { "from": 102400 }
+        ]
+      }
+    }
+  }
+}
+```
+
+#### Aggregations on filtered data
+
+```{js eval = FALSE}
+GET /bigginsight/_search?size=0&track_total_hits=true
+{
+  "query": {
+    "term": {
+      "customer": "Linkedin"
+    }
+  }, 
+  "aggs": {                           
+    "byCategory": {                   
+      "terms": {                      
+        "field": "category"           
+      }
+    }
+  }                        
+}
+```
+The hits.total element in the response is now much smaller than 
+the earlier aggregation query
+
+#### Nesting aggregations
+
+```{js eval = FALSE}
+GET /bigginsight/usageReport/_search?size=0
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"term": {"customer": "Linkedin"}}, 
+        {"range": {"time": {"gte": 1506257800000, "lte": 1506314200000}}}
+      ]
+    }
+  },
+  "aggs": {
+    "by_users": {
+      "terms": {
+        "field": "username"
+      },
+      "aggs": {
+        "total_usage": {
+          "sum": { "field": "usage" }
+        }
+      }
+    }
+  }
+}
+```
+The query above did not work for some reason. 
+
+### Bucketing on custom conditions
+
+```{js eval = TRUE}
+GET bigginsight/_search?size=0
+{
+  "aggs": {
+    "messages": {
+      "filters": {
+        "filters": {
+          "chat": { "match": { "category": "Chat" }},
+          "skype": { "match": { "application": "Skype" }},
+          "other_than_skype": {
+            "bool": {
+              "must": {"match": {"category": "Chat"}},
+              "must_not": {"match": {"application": "Skype"}}
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Bucketing on date/time date
+
+
+```{js eval = FALSE}
+GET /bigginsight/_search?size=0
+{
+  "aggs": {
+    "counts_over_time": {
+      "date_histogram": {
+        "field": "time",
+        "interval": "1d"
+      }
+    }
+  }
+}
+```
+The above had another bug. 
+
+### Bucketing on geospatial data
+How many places are from 5 to 10 metres of the lat / long.
+
+```{js eval = FALSE}
+GET bigginsight/_search?size=0
+{
+  "aggs": {
+    "within_radius": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {"lat": 23.102869,"lon": 72.595692},
+        "ranges": [{"from": 5, "to": 10}]
+      }
+    }
+  }
+}
+```
+
+### Geohash
+The following results in two buckets, but if we change the 
+precision to 9 we will get more buckets.
+
+Have a look at:
+https://en.wikipedia.org/wiki/Geohash
+
+
+```{js eval = FALSE}
+GET bigginsight/_search?size=0
+{
+  "aggs": {
+    "geo_hash": {
+      "geohash_grid": {
+        "field": "location",
+        "precision": 7
+      }
+    }
+  }
+}
+
+```
+
+### Pipeline aggregations
+Pipeline aggregations, as their name suggests, allow you to aggregate 
+over the results of another aggregation. 
+
+They let you pipe the results of an aggregation as input to another aggregation.
+
+The example did not work.
+
+

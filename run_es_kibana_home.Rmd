@@ -1,0 +1,724 @@
+---
+title: "Untitled"
+author: "Mark"
+date: "02/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Firstly Kibana
+```
+cd /Applications/kibana-7.13.0-darwin-x86_64
+./bin/kibana
+http://localhost:5601
+```
+
+Previous script was saved.
+
+## Now Elastic
+```
+cd /Applications/elasticsearch-7.13.0
+./bin/elasticsearch
+```
+## Outstanding
+Tried to run the following but got an error message for the ES port parameters
+
+``` {scala eval = FALSE}
+// run spark-shell with scala program that uses elasticsearch-hadoop-7.6.2.jar 
+// save data to an instance of ES running on port 9202
+spark-shell -i load_test_specific_port.scala \
+  --jars  elasticsearch-hadoop-7.6.2.jar \
+  --conf spark.es.nodes="korora.local" \
+  --conf spark.es.port = "9202"
+
+
+
+// older stuff
+//spark-shell --jars  elasticsearch-hadoop-7.6.2.jar
+
+//  import org.apache.spark.SparkContext._
+import org.elasticsearch.spark.sql._
+import spark.implicits._
+
+// structure for each row
+case class AlbumIndex(artist:String, yearOfRelease:Int, albumName: String)
+
+// create a data frame 
+val indexDocuments = Seq(
+    AlbumIndex("Led Zeppelin",1969,"Led Zeppelin"),
+    AlbumIndex("Boston",1976,"Boston"),
+    AlbumIndex("Fleetwood Mac", 1979,"Tusk")
+).toDF
+
+// save data frame to ES to the index "demoindex"
+indexDocuments.saveToEs("demoindex")
+
+
+
+
+
+```
+
+## Check Elasticsearch
+curl http://localhost:9202
+
+
+## Basic Elasticsearch in Kibana
+Catalog is the name of the index. _doc is the name of the type. Each index
+in Elasticsearch should create just one type.  And 1 is the ID assigned to the
+document after it is indexed.
+  
+An **index** is a container that manages documents of a single type. In data base
+terminology, a type is like a table. In EL7, an index can have only 1 type. 
+Typically, documents with mostly common sets of fields are grouped under one type.
+
+```
+PUT /catalog/_doc/1
+{
+   "sku": "SP000001",
+   "title": "Elasticsearch for Hadoop",
+   "description": "Elasticsearch for Hadoop",
+   "author": "Vishal Shukla",
+   "ISBN": "1785288997",
+   "price": 26.99
+}
+```
+
+We can have other types such as customers or products. Each field and its
+value can be seens as a key-value pair in the documement.  
+
+Elastic search maintains internal metafields.  These are:
+
+```
+_id           primary key
+_type         type of document
+_index        index name of the document.
+```
+### Nodes
+Every Elasticsearch node or instance is assigned a unique name when it is 
+started.  A node can also be assigned a static name via the node.name parameter
+in the Elasticsearch configuration file. 
+
+By default, every Elasticsearch node tries to join a cluster with the name Elasticsearch.
+If you start mulitiple nodes on the same network without modifying the **cluster.name**
+property, they form a cluster automatically.
+
+
+#### Shards and replicas
+The process of dividing the data between shards is called **sharding**. 
+By default, every index is configured to have five shards in EL. Once an index
+is created, the number of shards cannot be modified. 
+
+If a node goes down, because of hardware failure, then a portion of the index
+will be lost.  But distributed systems, such as Elasticsearch are expected to run
+despite hardware failure.  This issue is addressed by **replica shards** or 
+**replicas**.  Replicas are copies of primary shards. 
+
+## Mappings and datatypes
+Data is nevery completely schemaless or unstructured.  There are always some sets
+of fields that are common accross all documents in a type. 
+
+Elastic supports a wide variety of datatypes such as numbers, booleans, nested types,
+arrays and geo-types.  In a document, each field has a datatype associated with it.
+
+### Various datatypes including strings
+The **text** datatype is useful to supporting full-text search for lengthy text
+values.  The **keyword** type enables analytics on string fields.  Fields of
+this type support sorting, filtering and aggregations. The **binary** data type
+enables you to store arbitrary binary values after performing Base64 encoding.
+There is also a **range datatype** data type that defines ranges of integers and longs.
+
+The datatype **scaled_float** can be used for example to store $10.98 as 1098 as
+an integer. This enables more efficient storage. 
+
+#### Complex data types
+The **array datatype** arrays of the same data type.  Does not allow for the
+mixing of datatypes in arrays.
+
+The **object datatype** allows inner objects within JSON documents.
+
+The **nested datatype** supports arrays of inner objects. Where each inner object
+needs to be independently queriable.
+
+## Mappings
+Another product was added:
+
+```
+PUT /catalog/_doc/2
+{
+    "sku": "SP000002",
+    "title": "Google Pixel Phone 32GB - 5 inch display",
+    "description": "Google Pixel Phone 32GB - 5 inch display (Factory Unlocked US Version)",
+    "price": 400.00,
+    "resolution": "1440 x 2560 pixels",
+    "os": "Android 7.1"
+}
+```
+The two queries have some fields in common. These are: "sku", "title", 
+"description", "price".
+
+The default type is **_doc**
+
+### Index on the fly
+We we add a new document to a non-existent index and index is created on the fly.
+When a new index is created, the index template kicks in and provides the matching
+template for the index.  An index can be created beforehand as well, ES has
+a separate index API. Reference is here:
+https://www.elastic.co/guide/en/elasticsearch/reference/current/indices.html
+
+
+When the first document is indexed, Elasticsearch tries to infer the datatypes
+of all the fields. This feature is called **dynamic mapping of types**. To see
+the mappings of the product type in the catalog index, execute the following:
+
+```
+GET /catalog/_mapping
+```
+### Multi-field
+
+The following is an example of output when we run the command above. By default
+the field is stored as a multi-field with both the **text** and **keyword**.
+
+``` {json}
+"description" : {
+  "type" : "text",
+      "fields" : {
+        "keyword" : {
+          "type" : "keyword",
+              "ignore_above" : 256
+      }
+    }
+  }
+```
+
+The **multi-field** concept enables full-text search and analytics (sorting / aggregation)
+on the same field.
+
+## Inverted indexes
+The **inverted index** is a structure that maps each word to the document in 
+which it is located (word ==> document ==> one to many). 
+[it may also contain an "offset" where the term was found] The structure also
+lists the number of times the particular word occurs.
+
+By default, ES builds an inverted index on all the fields in the document, 
+pointing back to the ES document in which the field was present.
+
+## CRUD Operations
+The **Index, Get, Update, Delete** API all fall under the category of document
+APIs.
+
+### REST conventions POST / PUT
+POST is used for creating a new resource and PUT is used for updating an
+existing resource.
+
+
+### Index API
+in ES terminology, adding (or creating) a document to a type within an index
+of Elasticsearch is called an indexing operation.  This involves adding the
+document to the index by parsing all the fields within the document and
+building the inverted index. 
+
+### Indexing without providing an id
+The previous showed how to create a specific index. In regards to the following,
+an index is automatically created by ES and the index is a hashstring.
+
+```
+POST /catalog/_doc
+{
+    "sku": "SP000003",
+    "title": "Mastering Elasticsearch",
+    "description": "Mastering Elasticsearch",
+    "author": "Bharvi Dixit",
+    "price": 54.99
+}
+```
+### GET API
+This is useful when you already know the ID of the document.  For example:
+
+```
+GET /catalog/_doc/1
+```
+
+### UPDATE API
+We can update the existing document by ID.  The previous document had a 
+price of 26.99.
+
+```
+POST /catalog/_update/1{  "doc": {    "price": "28.99"  }}
+```
+Whenever a document is updated the version number is incremented. If the ID
+does not exist, an error messsage will result. 
+
+### An upsert
+If the document ID does not exist, then a new document will be created. The 
+following uses `"doc_as_upsert": true` to update or insert.
+
+
+```
+POST /catalog/_update/3
+{
+  "doc": {
+    "author": "Albert Paro",
+    "title": "Elasticsearch 5.0 Cookbook",
+    "description": "Elasticsearch 5.0 Cookbook Third Edition",
+    "price": "54.99"
+  },
+  "doc_as_upsert": true
+}
+
+```
+
+### An update based on an existing value.
+Create an entry and then increase the price by 2 units. The inline script
+is Elasticsearch's own "painless" scripting language.
+
+First create an entry with an ID auto generated by the framework.
+
+```
+POST /catalog/_doc
+{
+    "sku": "SP000003",
+    "title": "Mastering Elasticsearch",
+    "description": "Mastering Elasticsearch",
+    "author": "Bharvi Dixit",
+    "price": 54.99
+}
+```
+
+Now examine the id that was assigned to the entry.  In this particular case it
+was "Lii80HkB0zEeMF7ZuNXH"
+
+Examine the entry by running the following:
+
+```
+GET /catalog/_doc/Lii80HkB0zEeMF7ZuNXH
+```
+
+Now add $2 to the value.  We started with 54.99 but when 2 units is added,
+it will become 56.99.
+
+```
+POST /catalog/_update/Lii80HkB0zEeMF7ZuNXH
+{
+  "script": {
+    "source": "ctx._source.price += params.increment",
+    "lang": "painless",
+    "params": {
+      "increment": 2
+    }
+  }
+}
+```
+
+Run the same GET command to verify result.
+
+### Delete
+Its as easy as this:
+
+`DELETE /catalog/_doc/1ZFMpmoBa_wgE5i2FfWV`
+
+## Creating an index
+The following creates an index with five shards and two replicas.  It also
+defines a type called "my_type" (I think is a typo) 
+with one of "text" type and another of the "keyword"
+
+
+```
+PUT /catalog1
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 5,
+      "number_of_replicas": 2
+    }
+  },
+  "mappings": {
+    "properties": {
+      "f1": {
+        "type": "text"
+      },
+      "f2": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+```
+## Adding and defining a new type
+The following adds a new type called "name" with a type "text"
+
+```
+PUT /catalog/_mapping
+{
+  "properties": {
+    "name": {
+      "type": "text"
+    }
+  }
+}
+```
+And then we can print out the schema details using the following:
+
+`GET catalog`
+
+And now we add two documents using the following:
+
+```
+POST /catalog/_doc
+{
+  "name": "books"
+}
+
+POST /catalog/_doc
+{
+  "name": "phones"
+}
+```
+
+These two entries are stored with the data type of "text"  But now if we 
+add the following:
+
+```
+POST /catalog/_doc
+{
+ "name": "music",
+ "description": "On-demand streaming music"
+}
+```
+
+As "description" has not been previously defined, it will be stored as both
+"text" and "keyword" Two fields!  `description` and `description.keyword`
+
+The keyword field is not analysed. By default fields that are indexed with 
+double quotes for the first time are stored 
+
+### Taking control of type
+If you need to take control of type, you should define the mapping for the
+field before the document containing that field is indexed,
+
+**A field's type cannot be changed after documents are indexed within that field**
+
+# =============================================================================
+
+Learning Elastic Stack 7.0 (second edition)
+
+When using Kibana all responses are formatted as "pretty"
+
+### Matching all documents
+
+The following matches all documents:
+
+`GET /_search`
+
+Kibana's default return results are 10 hits. You can change this with the 
+following:
+
+`GET /_search?size=100`
+
+### Search on a specific index.  
+Run the following:
+
+```
+GET /catalog/_search?size=2
+GET /catalog/_doc/_search
+
+```
+
+You will a depreciation warning because each index is supposed to contain
+only one type.
+
+### Searching in multiple indexes
+
+Search the catalog and my_index
+
+```
+GET /catalog,my_index/_search
+```
+# =============================================================================
+
+## Basics of text analysis
+Unstructured text is called **full-text search**.  All fields that are of the
+text type are analyzed by what is known as an **analyzer**. 
+
+### Understanding Elasticsearch analyzers.
+The job of the analyzer is to take documents and each field within them and
+extract terms from them. These terms make the index searchable. 
+
+The process of breaking text into terms occurs at the time of indexing **and** at
+the time of searching. 
+
+Anallyzers can be configured for each field.  
+
+### Components of an analyser
+There are three components:
+
+1.    Character filters (zero or more)
+2.    Tokenizers (1 and only 1)
+3.    Token filters (zero or more)
+
+#### Character filters
+These operate on a character by character basis. The **mapping char** filter
+can map a character (or characters) into target characters.  For example, 
+transform ":)" into "_smile_" use the following:
+
+```
+    "char_filter": {
+        "my_char_filter": {
+          "type": "mapping",
+          "mappings": [
+            ":) => _smile_",
+            ":( => _sad_",
+            ":D => _laugh_"
+          ]
+        }
+      }
+```
+
+As character filters are at the start of the process, the tokeniser will see the
+replaced characters.
+
+Here is a link to other (built-in) character filters:
+
+https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-charfilters.html
+
+
+### Tokeniser
+The tokeniser receives a stream of characters and generates a stream of tokens.
+
+The following is a list of built in tokenizers:
+
+https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-tokenizers.html
+
+The **standard tokenizer** is one of the most popular as it is suitable for
+most langugaes. 
+
+
+#### Standard tokenizer
+
+The following shows how this works:
+
+```
+POST _analyze
+{
+  "tokenizer": "standard",
+  "text": "Tokenizer breaks characters into tokens!"
+}
+```
+
+### Token filters
+Some examples are **lower case token filter** and **stop token filter** (removes)
+stop words. The output of each token filter is sent to the next. There can be
+zero to many token filters.  These is a list of token filters:
+
+https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-tokenfilters.html
+
+### Built in analyzers
+These can be used directly. Almost all work without the need to additional 
+configuration. But they provide the flexibility of configuring some parameters.
+
+Here is a list:
+
+https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-analyzers.html
+
+#### Standard analyser
+This is a built-in analyser that uses a **standard tokenizer** It uses a lower
+case token filter and uses a stop word filter but specifies the stopwords to
+**_none_** by default.
+
+
+#### Creating an index with an analyser and mapping
+The following creates an index. A standard analyser is defined with the name
+**std** which is then applied in the mappings section. 
+
+```
+PUT index_standard_analyzer
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "std": { 
+          "type": "standard"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "my_text": {
+        "type": "text",
+        "analyzer": "std"
+      }
+    }
+  }
+}
+```
+
+Now we can test it:
+
+```
+POST index_standard_analyzer/_analyze
+{
+  "field": "my_text", 
+  "text": "The Standard Analyzer works this way."
+}
+```
+
+The standard analyzer is the default analyer if no other analyser is specified.
+
+
+##### Define standard analyser with english stop words
+
+```
+PUT index_standard_analyzer_english_stopwords
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "std": { 
+          "type": "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "my_text": {
+        "type": "text",
+        "analyzer": "std"
+      }
+    }
+  }
+}
+```
+
+#### Custom Analyser
+We are going to build an analyser for autocompletion.  It will generate the partial
+words at indexing time.  For example, if the user types in "elas" it should
+reccomend "Learning Elastic Stack 7"
+
+The following is the code to generate the index:
+
+```
+PUT /custom_analyzer_index
+{
+  "settings": {
+    "index": {
+      "analysis": {
+        "analyzer": {
+          "custom_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "custom_edge_ngram"
+            ]
+          }
+        },
+        "filter": {
+          "custom_edge_ngram": {
+            "type": "edge_ngram",
+            "min_gram": 2,
+            "max_gram": 10
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "product": {
+        "type": "text",
+        "analyzer": "custom_analyzer",
+        "search_analyzer": "standard"
+      }
+    }
+  }
+}
+
+```
+
+The **edge_ngram** token filter breaks each token into lengths of 2, 3...10
+character length. 
+
+Here is code to add two documents
+
+```
+POST /custom_analyzer_index/_doc
+{
+  "product": "Learning Elastic Stack 7"
+}
+
+POST /custom_analyzer_index/_doc
+{
+ "product": "Mastering Elasticsearch"
+}
+```
+And now query the index
+
+```
+GET /custom_analyzer_index/_search
+{
+ "query": {
+   "match": {
+     "product": "Ela"
+   }
+ }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## To Do
+How to save Kibana script.
+Do we have sbt at work?
+jar file naming convention
+have a look at the documentation see if --jars is better.  --packages seems to 
+download from Maven.
+Store the documents that Degan sent me. 

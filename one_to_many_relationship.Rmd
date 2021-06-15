@@ -1,0 +1,277 @@
+---
+title: "one_to_many"
+author: "Mark"
+date: "07/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## One to many relationships
+
+Run the following to set up the index:
+
+``` {json eval = FALSE}
+PUT /amazon_products_with_features
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {}
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "product_or_feature": {
+        "type": "join",
+        "relations": {
+          "product": "feature"
+        }
+      },
+      "title": {
+        "type": "text"
+      },
+      "description": {
+        "type": "text"
+      },
+      "manufacturer": {
+        "type": "text",
+        "fields": {
+          "raw": {
+            "type": "keyword"
+          }
+        }
+      },
+      "price": {
+        "type": "scaled_float",
+        "scaling_factor": 100
+      },
+      "feature_key": {
+        "type": "keyword"
+      },
+      "feature": {
+        "type": "keyword"
+      },
+      "feature_value": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+
+```
+
+We then changed the two conf files to get them to point to the two csv files.
+
+Now run Logstash:
+
+``` {shell eval = FALSE}
+/Applications/elasticsearch-7.13.0/bin/logstash -f "/Users/markthekoala/Downloads/product_features/logstash_products.conf"
+/Applications/elasticsearch-7.13.0/bin/logstash -f "/Users/markthekoala/Downloads/product_features/logstash_features.conf"
+
+```
+
+Press control + C after each run to exit Logstash
+ 
+### Understanding the conf file - the 'one' section
+
+This is adding another filed in the mutate block.
+
+```{js eval = FALSE}
+  mutate {
+    remove_field => ["@version","@timestamp","path","host", "tags", "message"]
+    
+    // field called "product_or_feature is hard coded to product"
+    add_field => { "product_or_feature" => "product" }
+  } 
+```
+
+#### Selecting fields.  
+The CSV fields are selected by position and named explicetely.
+
+``` {json eval = FALSE}
+filter {
+  csv {
+    separator => ","
+    columns => ["id","title","description","manufacturer","price"]
+  }
+```
+
+There are five fields here.  Also we add "product_or_feature" and hard code it.
+So total. There are six fields. 
+
+
+#### Output section
+``` {js eval = false}
+output {
+  elasticsearch {
+    hosts => "http://localhost:9202"
+    index => "amazon_products_with_features"
+    // set the document_id to value of id. Displayed in query results as "_id"
+    document_id => "%{id}"
+  }
+  stdout {}
+```
+
+### Understanding the conf file - the 'many' section
+
+This is the filter section. Nothing surprising here - 'feature key' and 'feature'
+are basically identical.
+
+```{json eval = FALSE}
+filter {
+  csv {
+    separator => ","
+    columns => ["parent_id","feature_key","feature","feature_value"]
+  }
+```
+
+We are adding two more fields here:
+
+```{js eval = FALSE}
+  mutate {
+    // hard code this.  But what is this?
+    add_field => {"[product_or_feature][name]" => "feature"}
+    // parent_id is just the first column
+    add_field => {"[product_or_feature][parent]" => "%{parent_id}"}
+  } 
+```
+
+Here is the output section
+
+```{js eval = FALSE}
+output {
+  elasticsearch {
+    hosts => "http://localhost:9202"
+    index => "amazon_products_with_features"
+    // this is easy
+    document_id => "%{parent_id}_%{feature_key}"
+    
+    // routing ensures that all documents with the same routing id are stored
+    // on the same shard.
+    routing => "%{parent_id}"
+  }
+  stdout {}
+}
+```
+### Analysis of PUT /amazon_products_with_features
+We start with 5 fields from products (parent) and 4 fields (feature)
+All 5 fields from products are specified without any surprises. 
+The last 3 (of 4) from details are specified in CURL PUT without any surprises.
+
+#### Additions 
+The field "product_or_feature" is specified in CURL and is added inside the
+`logstash_products.conf` Using a "mutate" verb.  It is hardcoded in the
+product conf.  
+
+
+### Analysis of query
+The query is below:
+
+```{js eval = FALSE}
+GET amazon_products_with_features/_search
+{
+  "query": {
+    "has_child": {
+      "type": "feature",
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "feature_key": {
+                  "value": "processor_series"
+                }
+              }
+            },
+            {
+              "term": {
+                "feature_value": {
+                  "value": "Core i7"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+Get all the products where:
+feature_key == "processor_series"  AND
+"feature_value" == "Core i7"
+
+The actual query is specified under the `query` element. We can use any query
+supported by ES here.  The query will be run against the child type that we
+specified.
+
+```{js eval = FALSE}
+    "has_child": {
+      "type": "feature",
+      "query": {
+```
+
+This is where we specified the child type:
+
+```{js eval = FALSE}
+     "product_or_feature": {
+        "type": "join",
+        "relations": {
+          "product": "feature"
+        }
+      },
+```
+
+### Has parent query
+In the previous example, we got the parent record based on a query executed 
+against the child.  Now, we will get the child based on some condition with
+the parent.
+
+```{js eval = FALSE}
+GET amazon_products_with_features/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "product",
+      "query": {
+        "ids": {
+          "values": ["c0001"]
+        }
+      }
+    }
+  }
+}
+```
+
+Here we want features of a very specific product and we already know the
+Elasticsearch ID field (_id) of the product. 
+
+This is why we use the ids query with just one value in the array: c0001.
+
+#### A more basic approach
+The following query yields the same results:
+
+```{js eval = FALSE}
+GET /amazon_products_with_features/_search
+{
+  "query": {
+    "parent_id": {
+      "type": "feature",
+      "id": "c0001"
+    }
+  }
+}
+```
+
+
+
+
+

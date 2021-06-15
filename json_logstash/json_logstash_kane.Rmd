@@ -1,0 +1,116 @@
+---
+title: "json_logstash"
+author: "Mark"
+date: "09/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic import using logstash
+Used the following as a config file:
+
+```{js eval = FALSE}
+input {
+        file {
+          start_position => "beginning"
+          path => "/Users/markthekoala/Downloads/json_logstash/sample-json.log"
+          sincedb_path => "null"
+        }
+}
+
+filter {
+    json {
+        source => "message"
+    }
+}
+
+output {
+  elasticsearch {
+    hosts => "http://localhost:9202"
+    index => "test_index"
+  }
+  stdout {}
+}
+```
+
+Then ran this from the logstash directory using the following:
+
+`./bin/logstash -f  /Users/markthekoala/Downloads/json_logstash/json-read.conf`
+
+There are five records in the input file. These are JSON objects. There is 
+a separate {} for each line.
+
+The entire json object gets stored inside a field called "message".  There are
+also many metadata fields added.
+
+### Rerunning scripts
+A file called "null" was created each time I ran this script.  It prevented
+further scripts from loading the data.  I therefore deleted this file before
+running the script.
+
+
+## Modified import using logstash
+The script was modified with the following filter section.  The was called
+`json-drop.conf`
+
+
+```{js eval = FALSE}
+    if [paymentType] == "Mastercard" {
+      drop {}
+    }
+    mutate {
+      remove_field => ["message", "@timestamp", "path", "host", "@version"]
+    }
+```
+
+## Splitting an array into documents
+This next file `sample-json-split.log` is similar. There are 5 rows.
+And within each row, there is a `pastEvents` array of objects. Each of the 
+objects has an `eventID` and a `transactionID` fields. 
+
+The following shows how to handle the array.
+
+```{js eval = FALSE}
+filter {
+    json {
+        source => "message"
+    }
+    split {
+      field => "[pastEvents]"
+    }
+    mutate {
+      remove_field => ["message", "@timestamp", "path", "host", "@version"]
+    }
+
+}
+```
+When imported the parent document is repeated according to how many entries
+in the `pastEvents` array.  The config file was called `json-split.conf`. When
+imported each record still had the pastEvents as an object.  Like as follows:
+
+```{js eval = FALSE}
+"pastEvents" : {"transactionId":  "xyd", "eventID": 8}
+
+```
+
+So, we change the mutate section as follows:
+
+```{js eval = FALSE}
+    mutate {
+      add_field => {
+          "eventId" => "%{[pastEvents][eventId]}"
+          "transactionId" => "%{[pastEvents][transactionId]}"
+      }
+      remove_field => ["message", "@timestamp", "path", "host", "@version", "pastEvents"]
+    }
+```
+
+This was saved in `json-split-structured.conf`.
+
+
+
+
+

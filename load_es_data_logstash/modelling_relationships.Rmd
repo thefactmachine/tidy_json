@@ -1,0 +1,152 @@
+---
+title: "modelling_relationships"
+author: "markspace"
+date: "07/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The problem
+We have a lot of products and these products have features.  There
+are certain classes of products which have similar sets of features. For
+example, products in the **Laptops** category would have features such 
+as screen_size or processor type.  
+
+While products in the **Automobile GPS Systems** would have features such as
+`speaks street names`.
+
+If these was implemented as a flat table. There would be many columns with 
+black values.  For example, there may be a column called `speaks street names`
+but this would only have values for GPS systems.
+
+
+In a relational data base we would model the features as a separate table. 
+Perhaps with the following fields: product_id, feature_name, feature_value
+
+### Join relationship
+This is shown here:
+
+`https://www.elastic.co/guide/en/elasticsearch/reference/7.x/parent-join.html`
+
+### Setting up the index.
+Firstly run this in Kibana.   There are five fields in the products file.
+There is no header row. And the names are provided in the logstash.conf file.
+
+The names for products are:
+id, title, description, manufacturer & price.
+
+Features has four columns.  The names (in the conf file) are:
+
+"parent_id","feature_key","feature","feature_value"
+
+The field "parent_id" is the name as id.  This is the join field.
+
+```{shell eval = FALSE}
+PUT /amazon_products_with_features
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {}
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "product_or_feature": {
+        "type": "join",
+        "relations": {
+          "product": "feature"
+        }
+      },
+      "title": {
+        "type": "text"
+      },
+      "description": {
+        "type": "text"
+      },
+      "manufacturer": {
+        "type": "text",
+        "fields": {
+          "raw": {
+            "type": "keyword"
+          }
+        }
+      },
+      "price": {
+        "type": "scaled_float",
+        "scaling_factor": 100
+      },
+      "feature_key": {
+        "type": "keyword"
+      },
+      "feature": {
+        "type": "keyword"
+      },
+      "feature_value": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+```
+
+Then ran logstash as follows:
+
+``` {shell eval = FALSE}
+bin/logstash -f /Users/zurich/Downloads/product_features/logstash_products.conf
+bin/logstash -f /Users/zurich/Downloads/product_features/logstash_features.conf
+```
+
+I needed to close down logstash after each load.
+
+
+Now lets see if we can get a result.  The following produced something:
+
+``` {json eval = FALSE}
+GET amazon_products_with_features/_search
+{
+  "query": {
+    "has_child": {
+      "type": "feature",                                     
+      "query": {
+        "bool": {                                            
+          "must": [
+            {
+              "term": {                                     
+                "feature_key": {
+                  "value": "processor_series"
+                }
+              }
+            },
+            {
+              "term": {                                     
+                "feature_value": {
+                  "value": "Core i7"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
